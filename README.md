@@ -8,3 +8,5 @@ It currently works on only Windows but Linux support will be added in the future
 ## TODO
 * Use abstractions to enable UNIX sockets
 * Use CMake/premake build systems in the future
+* Make a Logger class and a proper logging system
+* Make Socket abstractions for actual sockets and not connections

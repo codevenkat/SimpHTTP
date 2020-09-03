@@ -5,8 +5,7 @@ root = true
 [*]
 charset = utf-8
 trim_trailing_whitespace = true
-end_of_line = lf
-insert_final_newline = true
+end_of_line = crlf
 
 # Tab indentation (no size specified)
 [Makefile]
@@ -14,3 +13,4 @@ indent_style = tab
 
 [*.{c,h,cpp,hpp}]
 indent_size = 4
+insert_final_newline = true
