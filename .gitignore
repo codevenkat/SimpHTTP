@@ -1,3 +1,5 @@
+# CMake build output file
+out/
 
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudio,c++
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudio,c++
@@ -71,3 +73,6 @@ bld/
 
 # Visual Studio 2017 auto generated files
 Generated\ Files/
+
+# VSCode
+.vscode/

@@ -1,5 +1,23 @@
 #include "Socket.h"
 
+// some specific code for winsock and BSD sockets
+static void closesocket_(SOCKET sockToClose)
+{
+	// closesocket() on winodws, close() on POSIX
+	#ifdef WIN32
+		closesocket(sockToClose);
+	#else
+		close(sockToClose);
+	#endif
+}
+
+static void WSACleanup_()
+{
+	#ifdef WIN32
+		WSACleanup();
+	#endif
+}
+
 static void LogError(const char* errorMsg)
 {
 	std::cout << "[ERROR] " << errorMsg << " WSAError: " << WSAGetLastError() << std::endl;
@@ -19,14 +37,15 @@ static void LogInfo(const char* infoMsg)
 Socket::Socket(const char* iNode, const char* iPort)
 {
 	int iResult;
-
-	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (iResult != 0)
-	{
-		LogError("Failed WSAStartup with code", iResult);
-		WSACleanup();
-		exit(1);
-	}
+	#ifdef WIN32
+		iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+		if (iResult != 0)
+		{
+			LogError("Failed WSAStartup with code", iResult);
+			WSACleanup_();
+			exit(1);
+		}
+	#endif
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
@@ -39,7 +58,7 @@ Socket::Socket(const char* iNode, const char* iPort)
 	{
 		LogError("getaddrinfo failed");
 		freeaddrinfo(result);
-		WSACleanup();
+		WSACleanup_();
 		exit(1);
 	}
 
@@ -49,7 +68,7 @@ Socket::Socket(const char* iNode, const char* iPort)
 	{
 		LogError("socket failed");
 		freeaddrinfo(result);
-		WSACleanup();
+		WSACleanup_();
 		exit(1);
 	}
 
@@ -59,7 +78,7 @@ Socket::Socket(const char* iNode, const char* iPort)
 	{
 		LogError("bind failed");
 		freeaddrinfo(result);
-		WSACleanup();
+		WSACleanup_();
 		exit(1);
 	}
 
@@ -78,8 +97,8 @@ void Socket::Listen(int backlog)
 	if (iResult != 0)
 	{
 		LogError("listen failed");
-		closesocket(listenSocket);
-		WSACleanup();
+		closesocket_(listenSocket);
+		WSACleanup_();
 		exit(1);
 	}
 }
@@ -90,41 +109,40 @@ void Socket::Accept()
 	if (clientSocket == INVALID_SOCKET)
 	{
 		LogError("accept failed");
-		closesocket(listenSocket);
-		WSACleanup();
+		closesocket_(listenSocket);
+		WSACleanup_();
 		exit(1);
 	}
 
-	closesocket(listenSocket); // close listen socket because conn established
+	closesocket_(listenSocket); // close listen socket because conn established
 }
 
 std::string Socket::Recv(int bytesToRecv)
 {
-	int iResult = 0; // => number of bytes recv'd
-	std::string recvMsg;
+	int iResult; // => number of bytes recv'd
+	std::string recvData;
+	recvData.resize(bytesToRecv);
 
-	while (iResult > 0)
+	iResult = recv(clientSocket, recvData.data(), bytesToRecv, 0);
+	if (iResult > 0)
 	{
-		iResult = recv(clientSocket, recvMsg.data(), bytesToRecv, 0);
-		if (iResult > 0)
-		{
-			LogInfo((std::string("Received bytes: ") + std::to_string(iResult)).c_str());
-			return recvMsg;
-		}
-		else if (iResult == 0)
-			LogInfo("Closing connection");
-		else
-		{
-			// failed
-			LogError("recv failed");
-			closesocket(clientSocket);
-			WSACleanup();
-			exit(1);
-		}
+		LogInfo((std::string("Received bytes: ") + std::to_string(iResult)).c_str());
 	}
+	else if (iResult == 0)
+		LogInfo("Closing connection");
+	else
+	{
+		// failed
+		LogError("recv failed");
+		closesocket_(clientSocket);
+		WSACleanup_();
+		exit(1);
+	}
+
+	return recvData;
 }
 
-void Socket::Send(std::string sendString)
+void Socket::Send(std::string& sendString)
 {
 	int iResult;
 
@@ -133,8 +151,8 @@ void Socket::Send(std::string sendString)
 	if (iResult == SOCKET_ERROR)
 	{
 		LogError("send failed");
-		closesocket(clientSocket);
-		WSACleanup();
+		closesocket_(clientSocket);
+		WSACleanup_();
 		exit(1);
 	}
 }
@@ -147,12 +165,12 @@ void Socket::Shutdown()
 	if (iResult == SOCKET_ERROR)
 	{
 		LogError("shutdown failed");
-		closesocket(clientSocket);
-		WSACleanup();
+		closesocket_(clientSocket);
+		WSACleanup_();
 		exit(1);
 	}
 
 	// cleanup
-	closesocket(clientSocket);
-	WSACleanup();
+	closesocket_(clientSocket);
+	WSACleanup_();
 }

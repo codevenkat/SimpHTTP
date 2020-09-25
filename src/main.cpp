@@ -6,7 +6,11 @@ int main()
     socket.Listen(1);
     socket.Accept();
     std::string dat = socket.Recv(512);
-    socket.Send("hello");
+
+    std::string sendStr = "You said " + dat;
+
+    socket.Send(sendStr);
+
     socket.Shutdown();
 
     return 0;

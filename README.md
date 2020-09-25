@@ -6,7 +6,7 @@ SimpHTTP is a **Simp**le HTTP server implementing HTTP/1.x written in C++ withou
 It currently works on only Windows but Linux support will be added in the future.
 
 ## TODO
-* Use abstractions to enable UNIX sockets
-* Use CMake/premake build systems in the future
-* Make a Logger class and a proper logging system
+* UNIX socket code
 * Make Socket abstractions for actual sockets and not connections
+* Use separate implementation files for platform specific code instead of `#ifdef`s
+* Compile as a library and add a Sandbox subproject
