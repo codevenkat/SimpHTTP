@@ -9,6 +9,8 @@ using socket_t = SOCKET;
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <cstring>
+#include <unistd.h>
 
 using socket_t = int;
 constexpr int INVALID_SOCKET = -1;
