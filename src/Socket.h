@@ -1,29 +1,41 @@
 #pragma once
+
 #ifdef WIN32 // windows
 #include <WinSock2.h>
 #include <WS2tcpip.h>
-#else // POSIX headers
-#include<sys/types.h>
-#include<sys/socket.h>
+
+using socket_t = SOCKET;
+#else // POSIX
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
+using socket_t = int;
+constexpr int INVALID_SOCKET = -1;
+constexpr int SOCKET_ERROR = -1;
 #endif
+
 #include <iostream>
 #include <string>
 
 class Socket
 {
 public:
-	Socket(const char* iNode, const char* iPort);
+	Socket();
+	Socket(socket_t sock);
 	~Socket();
 
+	void Bind(const char* iNode, const char* iPort);
 	void Listen(int backlog);
 	std::string Recv(int bytesToRecv);
-	void Accept();
+	Socket Accept();
 	void Send(std::string& sendString);
 	void Shutdown();
 
 private:
-	WSADATA wsaData;
-	SOCKET listenSocket, clientSocket = INVALID_SOCKET;
-	struct addrinfo* result = nullptr;
-	struct addrinfo hints;
+	socket_t m_Sockfd = INVALID_SOCKET;
+	int iResult;
+
+	void LogError(std::string msg);
+	void LogInfo(std::string msg);
 };
