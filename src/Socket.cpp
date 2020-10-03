@@ -18,14 +18,13 @@ static void WSACleanup_()
 #endif
 }
 
-void Socket::LogError(std::string msg)
+int Socket::GetLastError()
 {
-	std::cout << "[ERROR] " << msg << " " << gai_strerror(iResult) << "\n";
-}
-
-void Socket::LogInfo(std::string msg)
-{
-	std::cout << "[INFO] " << msg << "\n";
+#ifdef WIN32
+	return WSAGetLastError();
+#else
+	return errno;
+#endif
 }
 
 // inits socket
@@ -37,7 +36,7 @@ Socket::Socket()
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0)
 	{
-		Socket::LogError("Failed WSAStartup");
+		spdlog::error("Failed WSAStartup");
 		WSACleanup_();
 		exit(1);
 	}
@@ -46,6 +45,18 @@ Socket::Socket()
 
 Socket::Socket(socket_t sockfd)
 {
+#ifdef WIN32
+	WSADATA wsaData;
+
+	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (iResult != 0)
+	{
+		spdlog::error("Failed WSAStartup: {}", WSAGetLastError());
+		WSACleanup_();
+		exit(1);
+	}
+#endif
+
 	m_Sockfd = sockfd;
 }
 
@@ -63,7 +74,7 @@ void Socket::Bind(const char* iNode, const char* iPort)
 	iResult = getaddrinfo(iNode, iPort, &hints, &result);
 	if (iResult != 0)
 	{
-		Socket::LogError("getaddrinfo failed");
+		spdlog::error("getaddrinfo failed: {}", gai_strerror(iResult));
 		freeaddrinfo(result);
 		WSACleanup_();
 		exit(1);
@@ -73,7 +84,7 @@ void Socket::Bind(const char* iNode, const char* iPort)
 	m_Sockfd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 	if (m_Sockfd == INVALID_SOCKET)
 	{
-		Socket::LogError("socket failed");
+		spdlog::error("socket failed");
 		freeaddrinfo(result);
 		WSACleanup_();
 		exit(1);
@@ -83,7 +94,7 @@ void Socket::Bind(const char* iNode, const char* iPort)
 	iResult = bind(m_Sockfd, result->ai_addr, (int)result->ai_addrlen);
 	if (iResult == SOCKET_ERROR)
 	{
-		Socket::LogError("bind failed");
+		spdlog::error("bind failed");
 		freeaddrinfo(result);
 		WSACleanup_();
 		exit(1);
@@ -101,7 +112,7 @@ void Socket::Listen(int backlog)
 	iResult = listen(m_Sockfd, backlog);
 	if (iResult != 0)
 	{
-		Socket::LogError("listen failed");
+		spdlog::error("listen failed");
 		closesocket_(m_Sockfd);
 		WSACleanup_();
 		exit(1);
@@ -114,7 +125,7 @@ Socket Socket::Accept()
 	clientSocket = accept(m_Sockfd, NULL, NULL);
 	if (clientSocket == INVALID_SOCKET)
 	{
-		Socket::LogError("accept failed");
+		spdlog::error("accept failed: {}, {}");
 		closesocket_(m_Sockfd);
 		WSACleanup_();
 		exit(1);
@@ -133,14 +144,14 @@ std::string Socket::Recv(int bytesToRecv)
 
 	if (iResult > 0)
 	{
-		LogInfo((std::string("Received bytes: ") + std::to_string(iResult)).c_str());
+		spdlog::info("Received bytes: {}", iResult);
 	}
 	else if (iResult == 0)
-		LogInfo("Closing connection");
+		spdlog::info("Closing connection...");
 	else
 	{
 		// failed
-		Socket::LogError("recv failed");
+		spdlog::error("recv failed");
 		closesocket_(m_Sockfd);
 		WSACleanup_();
 		exit(1);
@@ -154,10 +165,10 @@ void Socket::Send(const std::string& sendString)
 	int iResult;
 
 	iResult = send(m_Sockfd, sendString.c_str(), sendString.length(), 0);
-	LogInfo((std::string("Bytes sent: ") + std::to_string(iResult)).c_str());
+	spdlog::info("Bytes send: {}", iResult);
 	if (iResult == SOCKET_ERROR)
 	{
-		Socket::LogError("send failed");
+		spdlog::error("send failed");
 		closesocket_(m_Sockfd);
 		WSACleanup_();
 		exit(1);
@@ -176,7 +187,7 @@ void Socket::Shutdown()
 	iResult = shutdown(m_Sockfd, 1);
 	if (iResult == SOCKET_ERROR)
 	{
-		Socket::LogError("shutdown failed");
+		spdlog::error("shutdown failed");
 		closesocket_(m_Sockfd);
 		WSACleanup_();
 		exit(1);
