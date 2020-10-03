@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.16)
 
-set(sources main.cpp Logger.h Socket.h Socket.cpp)
+set(sources main.cpp Socket.h Socket.cpp)
 
 add_executable (SimpHTTP ${sources})
 target_link_libraries(SimpHTTP spdlog::spdlog)
