@@ -19,6 +19,7 @@ constexpr int SOCKET_ERROR = -1;
 
 #include <iostream>
 #include <string>
+#include "spdlog/spdlog.h"
 
 class Socket
 {
@@ -37,8 +38,7 @@ public:
 
 private:
 	socket_t m_Sockfd = INVALID_SOCKET;
-	int iResult;
+	size_t iResult;
 
-	void LogError(std::string msg);
-	void LogInfo(std::string msg);
+	int GetLastError();
 };
