@@ -1,17 +1,34 @@
 #include "Socket.h"
+#include <thread>
+#include <unordered_map>
+#include <string_view>
+
+constexpr int CONN_BACKLOG = 2;
+
+Socket listenSocket;
+
+void HandleConnection(Socket& connSock)
+{
+    std::string recvData = connSock.Recv(2048);
+
+    connSock.Send(recvData);
+    connSock.Shutdown();
+}
 
 int main()
 {
-    Socket socket;
-    socket.Bind(NULL, "4000");
-    socket.Listen(1);
-    Socket conn = socket.Accept();
-    std::string dat = conn.Recv(512);
-    std::string sendStr = "You said " + dat;
+    listenSocket.Bind(NULL, "4000");
+    listenSocket.Listen(CONN_BACKLOG);
 
-    conn.Send(sendStr);
+    while (true)
+    {
+        Socket connSock = listenSocket.Accept();
 
-    conn.Shutdown();
+        std::thread connWorker(HandleConnection, connSock);
+        connWorker.join();
+    }
+
+    listenSocket.CloseSocket();
 
     return 0;
 }

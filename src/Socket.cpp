@@ -18,7 +18,7 @@ static void WSACleanup_()
 #endif
 }
 
-void Socket::Socket::LogError(std::string msg)
+void Socket::LogError(std::string msg)
 {
 	std::cout << "[ERROR] " << msg << " " << gai_strerror(iResult) << "\n";
 }
@@ -120,8 +120,6 @@ Socket Socket::Accept()
 		exit(1);
 	}
 
-	closesocket_(m_Sockfd); // close listen socket because conn established
-
 	return Socket(clientSocket);
 }
 
@@ -132,6 +130,7 @@ std::string Socket::Recv(int bytesToRecv)
 	recvData.resize(bytesToRecv);
 
 	iResult = recv(m_Sockfd, recvData.data(), bytesToRecv, 0);
+
 	if (iResult > 0)
 	{
 		LogInfo((std::string("Received bytes: ") + std::to_string(iResult)).c_str());
@@ -150,7 +149,7 @@ std::string Socket::Recv(int bytesToRecv)
 	return recvData;
 }
 
-void Socket::Send(std::string& sendString)
+void Socket::Send(const std::string& sendString)
 {
 	int iResult;
 
@@ -163,6 +162,11 @@ void Socket::Send(std::string& sendString)
 		WSACleanup_();
 		exit(1);
 	}
+}
+
+void Socket::CloseSocket()
+{
+	closesocket_(m_Sockfd);
 }
 
 void Socket::Shutdown()

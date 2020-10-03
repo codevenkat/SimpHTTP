@@ -31,7 +31,8 @@ public:
 	void Listen(int backlog);
 	std::string Recv(int bytesToRecv);
 	Socket Accept();
-	void Send(std::string& sendString);
+	void Send(const std::string& sendString);
+	void CloseSocket();
 	void Shutdown();
 
 private:
