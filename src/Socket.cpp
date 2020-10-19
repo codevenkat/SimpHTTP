@@ -27,7 +27,7 @@ int Socket::GetLastError()
 #endif
 }
 
-// inits socket
+// inits socket(windows)
 Socket::Socket()
 {
 #ifdef WIN32
@@ -84,7 +84,7 @@ void Socket::Bind(const char* iNode, const char* iPort)
 	m_Sockfd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 	if (m_Sockfd == INVALID_SOCKET)
 	{
-		spdlog::error("socket failed");
+		spdlog::error("socket failed. Error: {}", GetLastError());
 		freeaddrinfo(result);
 		WSACleanup_();
 		exit(1);
@@ -94,7 +94,7 @@ void Socket::Bind(const char* iNode, const char* iPort)
 	iResult = bind(m_Sockfd, result->ai_addr, (int)result->ai_addrlen);
 	if (iResult == SOCKET_ERROR)
 	{
-		spdlog::error("bind failed");
+		spdlog::error("bind failed. Error: {}", GetLastError());
 		freeaddrinfo(result);
 		WSACleanup_();
 		exit(1);
@@ -112,7 +112,7 @@ void Socket::Listen(int backlog)
 	iResult = listen(m_Sockfd, backlog);
 	if (iResult != 0)
 	{
-		spdlog::error("listen failed");
+		spdlog::error("listen failed. Error: {}", GetLastError());
 		closesocket_(m_Sockfd);
 		WSACleanup_();
 		exit(1);
@@ -125,7 +125,7 @@ Socket Socket::Accept()
 	clientSocket = accept(m_Sockfd, NULL, NULL);
 	if (clientSocket == INVALID_SOCKET)
 	{
-		spdlog::error("accept failed: {}, {}");
+		spdlog::error("accept failed. Error: {}", GetLastError());
 		closesocket_(m_Sockfd);
 		WSACleanup_();
 		exit(1);
@@ -151,7 +151,7 @@ std::string Socket::Recv(int bytesToRecv)
 	else
 	{
 		// failed
-		spdlog::error("recv failed");
+		spdlog::error("recv failed. Error: {}", GetLastError());
 		closesocket_(m_Sockfd);
 		WSACleanup_();
 		exit(1);
@@ -165,10 +165,10 @@ void Socket::Send(const std::string& sendString)
 	int iResult;
 
 	iResult = send(m_Sockfd, sendString.c_str(), sendString.length(), 0);
-	spdlog::info("Bytes send: {}", iResult);
+	spdlog::info("Bytes sent: {}", iResult);
 	if (iResult == SOCKET_ERROR)
 	{
-		spdlog::error("send failed");
+		spdlog::error("send failed. Error: {}", GetLastError());
 		closesocket_(m_Sockfd);
 		WSACleanup_();
 		exit(1);
@@ -187,7 +187,7 @@ void Socket::Shutdown()
 	iResult = shutdown(m_Sockfd, 1);
 	if (iResult == SOCKET_ERROR)
 	{
-		spdlog::error("shutdown failed");
+		spdlog::error("shutdown failed. Error: {}", GetLastError());
 		closesocket_(m_Sockfd);
 		WSACleanup_();
 		exit(1);

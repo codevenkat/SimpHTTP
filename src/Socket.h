@@ -11,6 +11,7 @@ using socket_t = SOCKET;
 #include <netdb.h>
 #include <cstring>
 #include <unistd.h>
+#include <errno.h>
 
 using socket_t = int;
 constexpr int INVALID_SOCKET = -1;
